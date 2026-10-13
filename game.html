@@ -38,7 +38,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;tex
 .stat{display:flex;flex-direction:column;align-items:flex-start;min-width:64px}
 .stat b{font-size:1.05rem;font-variant-numeric:tabular-nums}
 .stat small{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}
-.goal{flex:1 1 160px;min-width:140px}
+.goal{flex:1 1 160px;min-width:140px;align-items:stretch}
 .meter{height:10px;border-radius:99px;background:var(--scrub-soft);overflow:hidden;margin-top:3px}
 .meter i{display:block;height:100%;width:0;background:var(--scrub);border-radius:99px;transition:width .3s}
 .iconbtn{border:2px solid var(--line);background:var(--paper);border-radius:10px;padding:4px 9px;font-weight:900}
@@ -48,7 +48,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;tex
 .room-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
 .room-h h2{font-size:1.15rem}
 .room-h small{color:var(--muted);font-weight:700}
-.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:8px}
 .seat{min-height:118px;border:2px dashed var(--line);border-radius:12px;background:transparent;padding:4px;display:grid;place-items:center}
 .seat.empty::after{content:"silla libre";font-size:.72rem;color:var(--muted);font-weight:700}
 .seat.target{border-color:var(--scrub);border-style:solid;background:var(--scrub-soft)}
@@ -85,7 +85,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;tex
 .pet{display:grid;justify-items:center;gap:2px;width:100%;max-width:120px;padding:4px;border-radius:10px;position:relative;font-size:.78rem}
 .pet .face{font-size:2.3rem;line-height:1.05}
 .pet .nm{font-weight:900}
-.pet .need{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;background:var(--scrub-soft);font-weight:800;font-size:.72rem;white-space:nowrap}
+.pet .need{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;background:var(--scrub-soft);font-weight:800;font-size:.72rem;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .pet .need.pay{background:var(--michi-soft)}
 .pet .pat{width:100%;height:6px;border-radius:99px;background:var(--bad-soft);overflow:hidden}
 .pet .pat i{display:block;height:100%;background:var(--scrub)}
@@ -131,7 +131,26 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;tex
 .item button:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
 .wallet{font-weight:900;color:var(--gold)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-@media (max-width:480px){.floor{grid-template-columns:repeat(2,minmax(0,1fr))}.seats{grid-template-columns:repeat(3,minmax(0,1fr))}.pet .face{font-size:1.9rem}.st{min-height:160px}}
+@media (max-width:560px){
+  .wrap{gap:8px;padding-block:8px 32px}
+  .hud{gap:4px 10px;padding:6px 10px}
+  .brand{display:none}
+  .stat{min-width:0}
+  .goal{order:5;flex-basis:100%}
+  .iconbtn{margin-left:auto}.iconbtn+.iconbtn{margin-left:0}
+  .tip{font-size:.85rem}
+  .room{padding:8px}
+  .seats{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .seat{min-height:104px;padding:2px}
+  .floor{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .st.locked{display:none}
+  .st{min-height:140px;padding:6px}
+  .slot{min-height:86px}
+  .pet{font-size:.7rem;padding:2px}
+  .pet .face{font-size:1.7rem}
+  .pet small{display:none}
+  .pet .need .nmst{display:none}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -167,6 +186,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;tex
       <li>Las mascotas con 👑 son VIP: pagan el doble pero tienen menos paciencia.</li>
       <li>Si Michi se duerme en una estación, tocalo para despertarlo con lasaña.</li>
     </ol>
+    <p>En celular, las estaciones que todavía no compraste aparecen recién cuando las comprás en la tienda.</p>
     <p>Llegá a la meta de monedas antes de cerrar y usá lo que ganes para mejorar la clínica.</p>
     <div class="row"><button class="big" id="btnStart" type="button">Abrir la clínica</button><button class="ghost" id="btnReset" type="button" hidden>Empezar de cero</button></div>
   </div>
@@ -323,7 +343,7 @@ function petHTML(p){
   const n=need(p);
   const steps=p.diag?`<div class="steps">${p.steps.map((s,i)=>`<span class="${i<p.step?"done":i===p.step?"now":""}">${ST[s].icon}</span>`).join("")}</div>`:"";
   const tag=p.status==="busy"?`<span class="need">${p.loc.st==="consulta"?"revisando…":"tratando…"}</span>`
-    :n==="caja"?`<span class="need pay">💰 a la caja</span>`:`<span class="need">→ ${ST[n].icon} ${ST[n].name}</span>`;
+    :n==="caja"?`<span class="need pay">💰 a la caja</span>`:`<span class="need">→ ${ST[n].icon} <span class="nmst">${ST[n].name}</span></span>`;
   return `<span class="pet ${p.status} ${sel===p.id?"sel":""}" data-pet="${p.id}">
     ${p.vip?'<span class="vip" aria-label="VIP">👑</span>':""}
     <span class="face">${p.face}</span><span class="nm">${p.name}</span>
