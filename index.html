@@ -1,0 +1,475 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>
+<title>Clínica Michi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;900&display=swap">
+<style>
+/* Piso de clínica veterinaria: baldosas menta, ambos de enfermería verde azulado, Michi naranja como acento */
+:root{
+  --floor:#e3f1ec; --tile:#d5e9e2; --paper:#ffffff; --ink:#18302c; --muted:#5d7570;
+  --scrub:#0f8a7c; --scrub-soft:#d3efe9; --michi:#ef8420; --michi-soft:#fde9d4;
+  --bad:#d23f3f; --bad-soft:#fbe2e2; --gold:#c99700; --line:#bfd9d1; --shadow:0 2px 0 rgba(24,48,44,.12);
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --floor:#0f1d1b; --tile:#132523; --paper:#1a2d2a; --ink:#e6f4f0; --muted:#93aca6;
+  --scrub:#3cc7b5; --scrub-soft:#163a35; --michi:#ff9d45; --michi-soft:#3b2814;
+  --bad:#ff6f6f; --bad-soft:#3d1c1c; --gold:#f2c230; --line:#2a4540; --shadow:0 2px 0 rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --floor:#0f1d1b; --tile:#132523; --paper:#1a2d2a; --ink:#e6f4f0; --muted:#93aca6;
+  --scrub:#3cc7b5; --scrub-soft:#163a35; --michi:#ff9d45; --michi-soft:#3b2814;
+  --bad:#ff6f6f; --bad-soft:#3d1c1c; --gold:#f2c230; --line:#2a4540; --shadow:0 2px 0 rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;color:var(--ink);font:15px/1.4 var(--body);
+  background:var(--floor);
+  background-image:conic-gradient(var(--tile) 25%,transparent 0 50%,var(--tile) 0 75%,transparent 0);
+  background-size:56px 56px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--michi);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:12px 40px;display:grid;gap:12px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.1;text-wrap:balance;letter-spacing:.01em}
+
+/* HUD */
+.hud{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:var(--shadow)}
+.brand{font-family:var(--display);font-size:1.3rem;color:var(--scrub);margin-right:auto}
+.brand span{color:var(--michi)}
+.stat{display:flex;flex-direction:column;align-items:flex-start;min-width:64px}
+.stat b{font-size:1.05rem;font-variant-numeric:tabular-nums}
+.stat small{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:900}
+.goal{flex:1 1 160px;min-width:140px}
+.meter{height:10px;border-radius:99px;background:var(--scrub-soft);overflow:hidden;margin-top:3px}
+.meter i{display:block;height:100%;width:0;background:var(--scrub);border-radius:99px;transition:width .3s}
+.iconbtn{border:2px solid var(--line);background:var(--paper);border-radius:10px;padding:4px 9px;font-weight:900}
+
+/* Sala de espera */
+.room{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
+.room-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.room-h h2{font-size:1.15rem}
+.room-h small{color:var(--muted);font-weight:700}
+.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.seat{min-height:118px;border:2px dashed var(--line);border-radius:12px;background:transparent;padding:4px;display:grid;place-items:center}
+.seat.empty::after{content:"silla libre";font-size:.72rem;color:var(--muted);font-weight:700}
+.seat.target{border-color:var(--scrub);border-style:solid;background:var(--scrub-soft)}
+
+/* Estaciones */
+.floor{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.st{position:relative;border:2px solid var(--line);background:var(--paper);border-radius:16px;padding:8px;text-align:left;
+  display:grid;grid-template-rows:auto 1fr auto;gap:6px;min-height:178px;box-shadow:var(--shadow);transition:transform .12s,border-color .12s}
+.st-h{display:flex;align-items:center;gap:6px}
+.st-ic{font-size:1.4rem;line-height:1}
+.st-n{font-family:var(--display);font-size:1rem;flex:1;min-width:0}
+.lv{display:flex;gap:3px}
+.lv i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.lv i.on{background:var(--michi)}
+.slot{display:grid;place-items:center;min-height:100px;border-radius:10px;background:var(--floor)}
+.slot.free::after{content:"libre";color:var(--muted);font-size:.75rem;font-weight:700}
+.prog{height:8px;border-radius:99px;background:var(--scrub-soft);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--scrub)}
+.st.locked{opacity:.5;cursor:not-allowed;border-style:dashed}
+.st.locked .slot::after{content:"compralo en la tienda";color:var(--muted);font-size:.72rem;font-weight:700;text-align:center}
+.st.target{border-color:var(--scrub);transform:translateY(-2px);box-shadow:0 0 0 3px var(--scrub-soft),var(--shadow)}
+.st.nope{opacity:.55}
+.st.cash{background:var(--michi-soft);border-color:var(--michi)}
+.st.cash .slot{background:transparent}
+.st.cash .slot::after{content:"cobrar al dueño";color:var(--ink);font-size:.8rem;font-weight:700}
+.st.cash.target{border-color:var(--scrub)}
+.st.sleepy .slot::after{content:none}
+.zzz{font-size:2.3rem;text-align:center;line-height:1.1}
+.zzz small{display:block;font-size:.72rem;font-weight:900;color:var(--michi)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* Paciente */
+.pet{display:grid;justify-items:center;gap:2px;width:100%;max-width:120px;padding:4px;border-radius:10px;position:relative;font-size:.78rem}
+.pet .face{font-size:2.3rem;line-height:1.05}
+.pet .nm{font-weight:900}
+.pet .need{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;background:var(--scrub-soft);font-weight:800;font-size:.72rem;white-space:nowrap}
+.pet .need.pay{background:var(--michi-soft)}
+.pet .pat{width:100%;height:6px;border-radius:99px;background:var(--bad-soft);overflow:hidden}
+.pet .pat i{display:block;height:100%;background:var(--scrub)}
+.pet .pat.mid i{background:var(--gold)}
+.pet .pat.low i{background:var(--bad)}
+.pet .vip{position:absolute;top:-6px;right:2px;font-size:1rem}
+.pet.sel{outline:3px solid var(--michi);background:var(--michi-soft)}
+.pet.ready .face{animation:bob 1s ease-in-out infinite}
+.pet.busy{opacity:.85}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.steps{display:flex;gap:2px;font-size:.8rem}
+.steps span{opacity:.35}.steps span.done{opacity:1;filter:grayscale(1)}.steps span.now{opacity:1}
+
+.tip{min-height:1.4em;text-align:center;font-weight:800;color:var(--muted)}
+.tip b{color:var(--scrub)}
+.float{position:fixed;pointer-events:none;font-family:var(--display);font-size:1.3rem;z-index:50;animation:up 1.1s forwards;text-shadow:0 1px 0 var(--paper)}
+@keyframes up{to{transform:translateY(-46px);opacity:0}}
+
+/* Pantallas */
+.over{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--floor) 70%,transparent);backdrop-filter:blur(3px);overflow:auto}
+.panel{background:var(--paper);border:3px solid var(--line);border-radius:20px;padding:20px;max-width:560px;width:100%;display:grid;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.panel h1{font-size:clamp(2rem,8vw,3rem);color:var(--scrub)}
+.panel h1 span{color:var(--michi)}
+.panel h2{font-size:1.6rem}
+.panel p{margin:0;color:var(--muted)}
+.panel ol{margin:0;padding-left:20px;display:grid;gap:4px}
+.big{border:0;border-radius:14px;background:var(--scrub);color:var(--paper);font-family:var(--display);font-size:1.3rem;padding:12px 18px;box-shadow:0 4px 0 color-mix(in srgb,var(--scrub) 60%,#000)}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 color-mix(in srgb,var(--scrub) 60%,#000)}
+.ghost{border:2px solid var(--line);background:transparent;border-radius:12px;padding:8px 12px;font-weight:800}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.summary div{background:var(--floor);border-radius:12px;padding:8px 10px}
+.summary b{display:block;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.summary small{color:var(--muted);font-weight:800;text-transform:uppercase;font-size:.66rem;letter-spacing:.08em}
+.verdict{font-family:var(--display);font-size:1.2rem}
+.verdict.ok{color:var(--scrub)}.verdict.no{color:var(--bad)}
+.shop{display:grid;gap:6px}
+.item{display:flex;align-items:center;gap:10px;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
+.item .ic{font-size:1.5rem}
+.item .tx{flex:1;min-width:0}
+.item .tx b{display:block}
+.item .tx small{color:var(--muted)}
+.item button{border:0;border-radius:10px;padding:7px 11px;font-weight:900;background:var(--michi);color:#fff;white-space:nowrap;font-variant-numeric:tabular-nums}
+.item button:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
+.wallet{font-weight:900;color:var(--gold)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:480px){.floor{grid-template-columns:repeat(2,minmax(0,1fr))}.seats{grid-template-columns:repeat(3,minmax(0,1fr))}.pet .face{font-size:1.9rem}.st{min-height:160px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="hud" id="hud">
+    <div class="brand">Clínica <span>Michi</span></div>
+    <div class="stat"><small>Día</small><b id="hDay">1</b></div>
+    <div class="stat"><small>Tiempo</small><b id="hTime">1:30</b></div>
+    <div class="stat goal"><small id="hGoalT">Meta del día</small><div class="meter"><i id="hGoal"></i></div></div>
+    <div class="stat"><small>Monedas</small><b id="hCoins" class="wallet">0</b></div>
+    <button class="iconbtn" id="btnPause" type="button" aria-label="Pausa">II</button>
+    <button class="iconbtn" id="btnSound" type="button" aria-label="Sonido">🔊</button>
+  </div>
+
+  <div class="tip" id="tip">Tocá una mascota y después tocá a dónde la querés llevar.</div>
+
+  <section class="room" aria-label="Sala de espera">
+    <div class="room-h"><h2>Sala de espera</h2><small id="queueInfo"></small></div>
+    <div class="seats" id="seats"></div>
+  </section>
+
+  <section class="floor" id="floor" aria-label="Estaciones de la clínica"></section>
+</div>
+
+<div class="over" id="scrStart">
+  <div class="panel">
+    <h1>Clínica <span>Michi</span></h1>
+    <p>Michi, el gato naranja de la clínica, duerme todo el día. Te toca a vos atender a las mascotas antes de que se cansen de esperar.</p>
+    <ol>
+      <li>Tocá una mascota de la sala de espera y llevala al <b>🩺 Consultorio</b> para saber qué tiene.</li>
+      <li>La etiqueta verde te dice a qué estación va después: <b>💊 Medicina</b>, <b>🩹 Vendajes</b>, <b>🛁 Baño</b>, <b>🩻 Rayos X</b> o <b>✂️ Cirugía</b>.</li>
+      <li>Cuando termina el tratamiento, llevala a la <b>💰 Caja</b> para cobrar. Cuanto más contenta, más propina.</li>
+      <li>Las mascotas con 👑 son VIP: pagan el doble pero tienen menos paciencia.</li>
+      <li>Si Michi se duerme en una estación, tocalo para despertarlo con lasaña.</li>
+    </ol>
+    <p>Llegá a la meta de monedas antes de cerrar y usá lo que ganes para mejorar la clínica.</p>
+    <div class="row"><button class="big" id="btnStart" type="button">Abrir la clínica</button><button class="ghost" id="btnReset" type="button" hidden>Empezar de cero</button></div>
+  </div>
+</div>
+
+<div class="over" id="scrEnd" hidden>
+  <div class="panel">
+    <h2 id="eTitle">Fin del día 1</h2>
+    <div class="verdict" id="eVerdict"></div>
+    <div class="summary" id="eSum"></div>
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.25rem">Tienda</h2><span>Tenés <span class="wallet" id="eCoins">0</span> monedas</span></div>
+    <div class="shop" id="shop"></div>
+    <button class="big" id="btnNext" type="button">Abrir el día 2</button>
+  </div>
+</div>
+
+<div class="over" id="scrPause" hidden>
+  <div class="panel"><h2>Pausa</h2><p>Las mascotas esperan quietas.</p><button class="big" id="btnResume" type="button">Seguir</button></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const STATIONS=[
+  {id:"consulta",name:"Consultorio",icon:"🩺",base:3,cost:0},
+  {id:"medicina",name:"Medicina",icon:"💊",base:4,cost:0},
+  {id:"vendaje",name:"Vendajes",icon:"🩹",base:5,cost:0},
+  {id:"bano",name:"Baño",icon:"🛁",base:5,cost:60},
+  {id:"rayos",name:"Rayos X",icon:"🩻",base:6,cost:120},
+  {id:"cirugia",name:"Cirugía",icon:"✂️",base:7,cost:180}
+];
+const ST=Object.fromEntries(STATIONS.map(s=>[s.id,s]));
+const AILMENTS=[
+  {n:"Fiebre",steps:["medicina"],pay:20},
+  {n:"Resfrío",steps:["medicina"],pay:18},
+  {n:"Pata lastimada",steps:["vendaje"],pay:24},
+  {n:"Corte feo",steps:["medicina","vendaje"],pay:40},
+  {n:"Pulgas",steps:["bano"],pay:26},
+  {n:"Barro y raspones",steps:["bano","vendaje"],pay:44},
+  {n:"Hueso roto",steps:["rayos","vendaje"],pay:60},
+  {n:"Panza dura",steps:["rayos","medicina"],pay:55},
+  {n:"Se tragó una media",steps:["rayos","cirugia"],pay:85},
+  {n:"Muela picada",steps:["cirugia","medicina"],pay:70}
+];
+const SPECIES=["🐶","🐱","🐰","🐹","🦜","🐢","🦔","🐷","🐭","🦎"];
+const NAMES=["Toby","Luna","Coco","Pelusa","Rocky","Kiwi","Nala","Simón","Manchas","Bigotes","Lola","Tango","Mora","Chispa","Firulais","Canela","Pancho","Oreo"];
+const DAY_LEN=90;
+
+/* ---------- guardado ---------- */
+function freshSave(){return {day:1,coins:0,lv:{consulta:1,medicina:1,vendaje:1},seats:4,decor:0,nurse:false};}
+let save=freshSave();
+function load(){try{const s=JSON.parse(localStorage.getItem("clinica-michi")||"null");if(s&&s.day)save=Object.assign(freshSave(),s);}catch(e){}}
+function store(){try{localStorage.setItem("clinica-michi",JSON.stringify(save));}catch(e){}}
+
+/* ---------- estado del día ---------- */
+let G=null, sel=null, paused=true, sound=true, actx=null, nextId=1;
+function newDay(){
+  G={time:DAY_LEN,spawnIn:1.5,pets:{},seats:Array(save.seats).fill(null),at:{},prog:{},
+     earned:0,served:0,lost:0,michi:null,michiIn:18+Math.random()*10,goal:70+(save.day-1)*55,over:false};
+  STATIONS.forEach(s=>{G.at[s.id]=null;G.prog[s.id]=0;});
+  sel=null; buildFloor(); renderAll();
+}
+const unlocked=id=>!!save.lv[id];
+const dur=id=>ST[id].base*Math.pow(.75,(save.lv[id]||1)-1);
+function need(p){return !p.diag?"consulta":p.step<p.steps.length?p.steps[p.step]:"caja";}
+
+function spawn(){
+  const free=G.seats.indexOf(null); if(free<0)return;
+  const pool=AILMENTS.filter(a=>a.steps.every(unlocked));
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  const vip=save.day>1&&Math.random()<.18;
+  const p={id:nextId++,face:SPECIES[Math.floor(Math.random()*SPECIES.length)],name:NAMES[Math.floor(Math.random()*NAMES.length)],
+    ail:a.n,steps:a.steps.slice(),pay:a.pay,vip,diag:false,step:0,pat:100,status:"wait",loc:{seat:free}};
+  G.pets[p.id]=p; G.seats[free]=p.id; beep(660,.06); renderAll();
+}
+
+/* ---------- movimientos ---------- */
+function detach(p){
+  if(p.loc.seat!=null)G.seats[p.loc.seat]=null;
+  if(p.loc.st)G.at[p.loc.st]=null;
+  p.loc={};
+}
+function tryStation(id,el){
+  const p=G.pets[sel]; if(!p)return;
+  if(id==="caja"){
+    if(need(p)!=="caja"){fail(el,`${p.name} todavía necesita ${label(need(p))}`);return;}
+    checkout(p,el);return;
+  }
+  if(!unlocked(id)){fail(el,"Esa estación todavía no la compraste");return;}
+  if(G.michi===id){fail(el,"Michi está durmiendo ahí. Tocalo para despertarlo");return;}
+  if(G.at[id]){fail(el,"Esa estación está ocupada");return;}
+  if(need(p)!==id){fail(el,`${p.name} necesita ${label(need(p))}`);return;}
+  detach(p); p.loc={st:id}; G.at[id]=p.id; G.prog[id]=0; p.status="busy"; sel=null;
+  beep(520,.05); renderAll();
+}
+function trySeat(i,el){
+  const p=G.pets[sel]; if(!p)return;
+  if(G.seats[i]!=null){fail(el,"Esa silla está ocupada");return;}
+  if(p.loc.seat!=null){G.seats[p.loc.seat]=null;}
+  else detach(p);
+  p.loc={seat:i}; G.seats[i]=p.id; p.status="wait"; sel=null; renderAll();
+}
+function checkout(p,el){
+  const tip=Math.round(p.pay*.6*p.pat/100);
+  const total=(p.pay+tip)*(p.vip?2:1);
+  detach(p); delete G.pets[p.id]; if(sel===p.id)sel=null;
+  G.earned+=total; save.coins+=total; G.served++;
+  floatText(el,`+${total}`,"var(--gold)"); beep(880,.07); setTimeout(()=>beep(1175,.09),80);
+  say(`<b>${p.name}</b> se fue feliz. Pagó ${total} monedas${tip?` (propina ${tip*(p.vip?2:1)})`:""}.`);
+  renderAll();
+}
+function fail(el,msg){
+  if(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");}
+  say(msg); beep(180,.12);
+}
+const label=id=>id==="caja"?"ir a la 💰 Caja":`${ST[id].icon} ${ST[id].name}`;
+
+/* ---------- loop ---------- */
+let last=0;
+function tick(t){
+  const dt=Math.min(.1,(t-last)/1000||0); last=t;
+  if(!paused&&G&&!G.over)step(dt);
+  requestAnimationFrame(tick);
+}
+function step(dt){
+  let dirty=false;
+  if(G.time>0){
+    G.time=Math.max(0,G.time-dt);
+    G.spawnIn-=dt;
+    if(G.spawnIn<=0){spawn();G.spawnIn=Math.max(3.5,10-save.day*.9)+Math.random()*4;}
+    if(save.day>1&&!G.michi){G.michiIn-=dt;if(G.michiIn<=0){
+      const free=STATIONS.filter(s=>unlocked(s.id)&&!G.at[s.id]&&s.id!=="consulta");
+      if(free.length){G.michi=free[Math.floor(Math.random()*free.length)].id;say("Michi se quedó dormido en una estación. Tocalo para despertarlo.");dirty=true;}
+      G.michiIn=22+Math.random()*14;}}
+  }
+  const rate=(save.day===1?2.6:3.2)*(1-.15*save.decor);
+  for(const p of Object.values(G.pets)){
+    if(p.status==="busy"){
+      const id=p.loc.st; G.prog[id]+=dt/dur(id);
+      if(G.prog[id]>=1){G.prog[id]=1;if(id==="consulta")p.diag=true;else p.step++;p.status="ready";beep(760,.05);dirty=true;
+        if(save.nurse&&need(p)==="caja"){checkout(p,document.querySelector(`[data-st="${id}"]`));continue;}}
+    }else{
+      p.pat-=dt*rate*(p.vip?1.5:1)*(p.status==="ready"?.75:1);
+      if(p.pat<=0){detach(p);delete G.pets[p.id];if(sel===p.id)sel=null;G.lost++;say(`<b>${p.name}</b> se cansó de esperar y se fue 😿`);beep(140,.2);dirty=true;}
+    }
+  }
+  if(dirty)renderAll(); else updateLive();
+  if(G.time<=0&&!Object.keys(G.pets).length)endDay();
+}
+
+/* ---------- render ---------- */
+function petHTML(p){
+  const n=need(p);
+  const steps=p.diag?`<div class="steps">${p.steps.map((s,i)=>`<span class="${i<p.step?"done":i===p.step?"now":""}">${ST[s].icon}</span>`).join("")}</div>`:"";
+  const tag=p.status==="busy"?`<span class="need">${p.loc.st==="consulta"?"revisando…":"tratando…"}</span>`
+    :n==="caja"?`<span class="need pay">💰 a la caja</span>`:`<span class="need">→ ${ST[n].icon} ${ST[n].name}</span>`;
+  return `<span class="pet ${p.status} ${sel===p.id?"sel":""}" data-pet="${p.id}">
+    ${p.vip?'<span class="vip" aria-label="VIP">👑</span>':""}
+    <span class="face">${p.face}</span><span class="nm">${p.name}</span>
+    ${p.diag?`<small>${p.ail}</small>`:"<small>¿qué tendrá?</small>"}${steps}${tag}
+    <span class="pat"><i></i></span></span>`;
+}
+function buildFloor(){
+  const f=$("#floor");
+  f.innerHTML=STATIONS.map(s=>`<button type="button" class="st" data-st="${s.id}">
+    <span class="st-h"><span class="st-ic">${s.icon}</span><span class="st-n">${s.name}</span><span class="lv"></span></span>
+    <span class="slot"></span><span class="prog"><i></i></span></button>`).join("")+
+    `<button type="button" class="st cash" data-st="caja"><span class="st-h"><span class="st-ic">💰</span><span class="st-n">Caja</span></span><span class="slot"></span><span></span></button>`;
+}
+function renderAll(){
+  if(!G)return;
+  const sp=sel&&G.pets[sel];
+  $("#seats").innerHTML=G.seats.map((id,i)=>{
+    const p=id&&G.pets[id];
+    const tgt=sp&&!p&&sp.loc.st&&sp.status==="ready";
+    return `<button type="button" class="seat ${p?"":"empty"} ${tgt?"target":""}" data-seat="${i}" aria-label="${p?p.name:"Silla libre"}">${p?petHTML(p):""}</button>`;
+  }).join("");
+  document.querySelectorAll("#floor .st").forEach(el=>{
+    const id=el.dataset.st;
+    if(id==="caja"){el.classList.toggle("target",!!sp&&need(sp)==="caja");el.classList.toggle("nope",!!sp&&need(sp)!=="caja");return;}
+    const lock=!unlocked(id), pid=G.at[id], p=pid&&G.pets[pid], sleepy=G.michi===id;
+    el.classList.toggle("locked",lock); el.classList.toggle("sleepy",sleepy);
+    el.querySelector(".lv").innerHTML=lock?"":[1,2,3].map(l=>`<i class="${l<=save.lv[id]?"on":""}"></i>`).join("");
+    const slot=el.querySelector(".slot");
+    slot.className="slot"+(p||sleepy||lock?"":" free");
+    slot.innerHTML=sleepy?`<div class="zzz">🐈💤<small>Tocá para despertar</small></div>`:p?petHTML(p):"";
+    const ok=sp&&!lock&&!p&&!sleepy&&need(sp)===id;
+    el.classList.toggle("target",!!ok); el.classList.toggle("nope",!!sp&&!ok&&sp.id!==pid);
+  });
+  updateLive();
+}
+function updateLive(){
+  if(!G)return;
+  document.querySelectorAll("[data-pet]").forEach(el=>{
+    const p=G.pets[el.dataset.pet]; if(!p)return;
+    const bar=el.querySelector(".pat"); bar.firstElementChild.style.width=Math.max(0,p.pat)+"%";
+    bar.className="pat"+(p.pat<30?" low":p.pat<60?" mid":"");
+  });
+  STATIONS.forEach(s=>{const el=document.querySelector(`[data-st="${s.id}"] .prog i`);if(el)el.style.width=(G.at[s.id]&&G.pets[G.at[s.id]]?.status==="busy"?G.prog[s.id]*100:G.at[s.id]?100:0)+"%";});
+  const t=Math.ceil(G.time);
+  $("#hTime").textContent=G.time>0?`${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`:"Cerrado";
+  $("#hDay").textContent=save.day;
+  $("#hCoins").textContent=save.coins;
+  $("#hGoal").style.width=Math.min(100,G.earned/G.goal*100)+"%";
+  $("#hGoalT").textContent=`Meta ${G.earned}/${G.goal}`;
+  const waiting=G.seats.filter(x=>x!=null).length;
+  $("#queueInfo").textContent=G.time>0?`${waiting}/${G.seats.length} sillas ocupadas`:"No entran más pacientes hoy";
+}
+function say(h){$("#tip").innerHTML=h;}
+function floatText(el,txt,color){
+  const r=(el||$("#hud")).getBoundingClientRect(),f=document.createElement("div");
+  f.className="float";f.textContent=txt;f.style.color=color;f.style.left=(r.left+r.width/2-20)+"px";f.style.top=(r.top+r.height/3)+"px";
+  document.body.appendChild(f);setTimeout(()=>f.remove(),1150);
+}
+
+/* ---------- clics ---------- */
+document.addEventListener("click",e=>{
+  ensureAudio();
+  if(!G||paused)return;
+  const stEl=e.target.closest("[data-st]"), seatEl=e.target.closest("[data-seat]");
+  const petEl=e.target.closest("[data-pet]");
+  if(stEl){
+    const id=stEl.dataset.st;
+    if(G.michi===id){G.michi=null;floatText(stEl,"¡Lasaña!","var(--michi)");beep(990,.05);say("Michi se fue a comer lasaña. La estación quedó libre.");renderAll();return;}
+    const here=G.at[id]&&G.pets[G.at[id]];
+    if(here&&(!sel||sel===here.id||G.pets[sel]?.status==="busy")){
+      if(here.status==="busy"){say(`${here.name} está en tratamiento. Esperá a que termine.`);return;}
+      sel=sel===here.id?null:here.id; if(sel)say(`Llevá a <b>${here.name}</b> a ${label(need(here))}.`); renderAll(); return;
+    }
+    if(sel){tryStation(id,stEl);return;}
+    if(id==="caja")say("Primero elegí una mascota que ya esté curada.");
+    return;
+  }
+  if(seatEl){
+    const i=+seatEl.dataset.seat, here=G.seats[i]!=null&&G.pets[G.seats[i]];
+    if(here){sel=sel===here.id?null:here.id;if(sel)say(`Llevá a <b>${here.name}</b> a ${label(need(here))}.`);renderAll();return;}
+    if(sel)trySeat(i,seatEl);
+    return;
+  }
+  if(!petEl&&!e.target.closest("button")&&sel){sel=null;renderAll();}
+});
+
+/* ---------- fin del día y tienda ---------- */
+function endDay(){
+  G.over=true; paused=true;
+  const ok=G.earned>=G.goal;
+  $("#eTitle").textContent=`Fin del día ${save.day}`;
+  $("#eVerdict").className="verdict "+(ok?"ok":"no");
+  $("#eVerdict").textContent=ok?"¡Llegaste a la meta! Michi está orgulloso (aunque no lo demuestra).":`Te faltaron ${G.goal-G.earned} monedas. Repetís el día, pero te quedás con lo ganado.`;
+  $("#eSum").innerHTML=[["Ganado",G.earned],["Meta",G.goal],["Atendidos",G.served],["Se fueron",G.lost]]
+    .map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join("");
+  if(ok)save.day++;
+  $("#btnNext").textContent=`Abrir el día ${save.day}`;
+  store(); renderShop(); $("#scrEnd").hidden=false; beep(ok?700:220,.2);
+}
+function shopItems(){
+  const items=[];
+  STATIONS.forEach(s=>{
+    if(!unlocked(s.id))items.push({ic:s.icon,t:`Comprar ${s.name}`,d:"Nuevos pacientes con otras enfermedades (y que pagan más).",cost:s.cost,buy:()=>{save.lv[s.id]=1;}});
+    else if(save.lv[s.id]<3)items.push({ic:s.icon,t:`Mejorar ${s.name} (nivel ${save.lv[s.id]+1})`,d:"Trata 25% más rápido.",cost:50*save.lv[s.id],buy:()=>{save.lv[s.id]++;}});
+  });
+  if(save.seats<7)items.push({ic:"🪑",t:"Silla extra",d:`La sala de espera pasa a ${save.seats+1} sillas.`,cost:40+(save.seats-4)*25,buy:()=>{save.seats++;}});
+  if(save.decor<3)items.push({ic:"🪴",t:"Decorar la sala",d:"Plantas y juguetes: las mascotas se impacientan 15% más lento.",cost:70+save.decor*40,buy:()=>{save.decor++;}});
+  if(!save.nurse)items.push({ic:"🧑‍⚕️",t:"Contratar enfermera",d:"Cobra sola a las mascotas que terminan el tratamiento.",cost:220,buy:()=>{save.nurse=true;}});
+  return items;
+}
+function renderShop(){
+  const items=shopItems();
+  $("#eCoins").textContent=save.coins;
+  $("#shop").innerHTML=items.length?items.map((it,i)=>`<div class="item"><span class="ic">${it.ic}</span><span class="tx"><b>${it.t}</b><small>${it.d}</small></span>
+    <button type="button" data-buy="${i}" ${save.coins<it.cost?"disabled":""}>${it.cost} 🪙</button></div>`).join(""):"<p>¡Compraste todo! La clínica está al máximo.</p>";
+  $("#shop").onclick=e=>{const b=e.target.closest("[data-buy]");if(!b)return;const it=items[+b.dataset.buy];
+    if(save.coins<it.cost)return;save.coins-=it.cost;it.buy();store();beep(980,.06);renderShop();};
+}
+
+/* ---------- sonido ---------- */
+function ensureAudio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function beep(f,d){
+  if(!sound||!actx)return;
+  try{const o=actx.createOscillator(),g=actx.createGain();o.type="triangle";o.frequency.value=f;
+    g.gain.setValueAtTime(.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.05);
+    o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+d+.06);}catch(e){}
+}
+
+/* ---------- botones ---------- */
+$("#btnStart").onclick=()=>{$("#scrStart").hidden=true;newDay();paused=false;};
+$("#btnNext").onclick=()=>{$("#scrEnd").hidden=true;newDay();paused=false;};
+$("#btnReset").onclick=()=>{save=freshSave();store();$("#btnReset").hidden=true;$("#btnStart").textContent="Abrir la clínica";};
+$("#btnPause").onclick=()=>{if(!G||G.over)return;paused=true;$("#scrPause").hidden=false;};
+$("#btnResume").onclick=()=>{$("#scrPause").hidden=true;paused=false;};
+$("#btnSound").onclick=()=>{sound=!sound;$("#btnSound").textContent=sound?"🔊":"🔇";};
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&G&&!G.over&&!paused){paused=true;$("#scrPause").hidden=false;}});
+
+function start(data){
+  load();
+  if(data&&data.save)save=Object.assign(freshSave(),data.save);
+  if(save.day>1||save.coins>0){$("#btnStart").textContent=`Seguir en el día ${save.day}`;$("#btnReset").hidden=false;}
+  newDay(); requestAnimationFrame(tick);
+}
+window.claude?.hot?.snapshot?.(()=>({save}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+})();
+</script>
+</body></html>
